@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>LA CASA SIEMPRE GANA!</title>
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #ccc;
+      font-family: 'Impact', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #b52720;;
+      font-size: 5rem;
+      margin-bottom: 20px;
+    }
+
+    .instructions {
+      font-size: 1.2rem;
+      color: #ccc;
+      margin-bottom: 20px;
+    }
+
+    .roulette-container {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: auto;
+      border-radius: 50%;
+      box-sizing: border-box;
+    }
+
+    .wheel {
+      width: 100%;
+      height: 100%;
+      transition: transform 4s ease-out;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      background-color: #b52720;;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .loss-label {
+      font-size: 2rem;
+      color: #b52720;;
+      margin-top: 20px;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    select,
+    input[type='number'] {
+      padding: 10px;
+      font-size: 1rem;
+      margin: 5px;
+      border-radius: 5px;
+    }
+
+    #resultContainer {
+      margin-bottom: 20px;
+    }
+
+    #result,
+    #earnings,
+    #total,
+    #shotCounter {
+      font-size: 1.3rem;
+      margin: 5px 0;
+      color: #b52720;
+    }
+    
+  </style>
+</head>
+<body>
+  <h1>LA CASA SIEMPRE GANA</h1>
+  <p class="instructions">Selecciona el número o color que quieras </p>
+  <p class="instructions">Si ganas recibiras un código para recibir un bono de apuestas</p>
+
+  <div id="resultContainer">
+    <div id="result"></div>
+    <div id="shotCounter"></div>
+  </div>
+
+  <div class="controls">
+    <label for="betType">Tipo de apuesta:</label>
+    <select id="betType" onchange="toggleInputs()">
+      <option value="">--</option>
+      <option value="number">Número</option>
+      <option value="color">Color</option>
+    </select>
+
+    <div id="numberInput" style="display: none;">
+      <label for="betNumber">Número:</label>
+      <select id="betNumber">
+        <option value="">--</option>
+        <script>
+          const betNumberOptions = [...Array(37).keys()];
+          betNumberOptions.forEach((n) => {
+            document.write(`<option value="${n}">${n}</option>`);
+          });
+        </script>
+      </select>
+    </div>
+
+    <div id="colorInput" style="display: none;">
+      <label for="betColor">Color:</label>
+      <select id="betColor">
+        <option value="">--</option>
+        <option value="red">Rojo</option>
+        <option value="black">Negro</option>
+        <option value="green">Verde</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="roulette-container">
+    <svg class="wheel" id="wheel" viewBox="0 0 500 500">
+      <circle cx="250" cy="250" r="200" fill="#8B4513" stroke="white" stroke-width="10" />
+      <g id="sectors"></g>
+      <circle cx="250" cy="250" r="40" fill="#0a0a0a" stroke="white" stroke-width="5" />
+    </svg>
+  </div>
+
+  <button onclick="spin()">GIRAR</button>
+
+  <script>
+    const wheel = document.getElementById('wheel');
+    const sectors = document.getElementById('sectors');
+    const redNumbers = [
+      1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
+    ];
+    const numbers = [
+      0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
+      5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
+    ];
+    const angle = 360 / numbers.length;
+    let currentRotation = 0;
+    let totalGanancias = 0;
+
+    // Mensajes por tiro
+    const messages = [
+      "Tal vez es cuestión de suerte, Vuelve a Intentarlo",
+      "La tercera es la vencida verdad? Vuelve a Intentarlo",
+      "De verdad quieres seguir? Vuelve a Intentarlo",
+      "Por qué sigues aquí? Vuelve a Intentarlo",
+      "LA LUDOPATÍA NO ES UN JUEGO llama al Centro de ayuda Contra las Adicciones: 800 911 200",
+    ];
+    let shotCount = 0;
+
+    numbers.forEach((n, i) => {
+      const start = i * angle;
+      const end = start + angle;
+      const color =
+        n === 0 ? 'green' : redNumbers.includes(n) ? 'red' : 'black';
+
+      const x1 = 250 + 200 * Math.cos(Math.PI * 2 * (start / 360));
+      const y1 = 250 + 200 * Math.sin(Math.PI * 2 * (start / 360));
+      const x2 = 250 + 200 * Math.cos(Math.PI * 2 * (end / 360));
+      const y2 = 250 + 200 * Math.sin(Math.PI * 2 * (end / 360));
+
+      const largeArc = angle > 180 ? 1 : 0;
+      const d = `M250,250 L${x1},${y1} A200,200 0 ${largeArc} 1 ${x2},${y2} Z`;
+
+      const path = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'path'
+      );
+      path.setAttribute('d', d);
+      path.setAttribute('fill', color);
+      sectors.appendChild(path);
+
+      const textAngle = ((start + angle / 2) * Math.PI) / 180;
+      const tx = 250 + 160 * Math.cos(textAngle);
+      const ty = 255 + 160 * Math.sin(textAngle);
+
+      const text = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'text'
+      );
+      text.setAttribute('x', tx);
+      text.setAttribute('y', ty);
+      text.setAttribute('fill', 'white');
+      text.setAttribute('font-size', '14');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('alignment-baseline', 'middle');
+      text.setAttribute('transform', `rotate(${start + angle / 2} ${tx} ${ty})`);
+      text.textContent = n;
+      sectors.appendChild(text);
+    });
+
+    function toggleInputs() {
+      const betType = document.getElementById('betType').value;
+      document.getElementById('numberInput').style.display =
+        betType === 'number' ? 'inline' : 'none';
+      document.getElementById('colorInput').style.display =
+        betType === 'color' ? 'inline' : 'none';
+    }
+
+    function spin() {
+      const resultDiv = document.getElementById('result');
+      const shotCounter = document.getElementById('shotCounter');
+      const betType = document.getElementById('betType').value;
+      const betNumber = document.getElementById('betNumber').value;
+      const betColor = document.getElementById('betColor').value;
+
+      resultDiv.textContent = '';
+      shotCounter.textContent = '';
+
+      if (
+        !betType ||
+        (betType === 'number' && betNumber === '') ||
+        (betType === 'color' && betColor === '')
+      ) {
+        alert('Completa correctamente todos los campos de la apuesta.');
+        return;
+      }
+
+      let landedIndex;
+      do {
+        landedIndex = Math.floor(Math.random() * numbers.length);
+      } while (
+        (betType === 'number' && numbers[landedIndex] == betNumber) ||
+        (betType === 'color' &&
+          ((numbers[landedIndex] === 0 && betColor === 'green') ||
+            (redNumbers.includes(numbers[landedIndex]) && betColor === 'red') ||
+            (!redNumbers.includes(numbers[landedIndex]) &&
+              numbers[landedIndex] !== 0 &&
+              betColor === 'black')))
+      );
+
+      const resultNumber = numbers[landedIndex];
+      const resultColor =
+        resultNumber === 0
+          ? 'verde'
+          : redNumbers.includes(resultNumber)
+          ? 'rojo'
+          : 'negro';
+
+      const targetAngle = 360 - (landedIndex * angle + angle / 2);
+      const newRotation = currentRotation + 360 * 5 + targetAngle;
+      currentRotation = newRotation;
+      wheel.style.transform = `rotate(${newRotation}deg)`;
+
+      setTimeout(() => {
+        resultDiv.innerHTML = `PERDISTE Cayó en <strong>${resultNumber}</strong> (${resultColor.toUpperCase()})`;
+
+        shotCount++;
+        const message =
+          messages[shotCount - 1] || 'Este juego puede volverse un problema, reflexiona.';
+        shotCounter.textContent = `${message}`;
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
